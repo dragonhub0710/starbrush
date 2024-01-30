@@ -1,0 +1,10 @@
+.bg-custom-background {
+  background: url("/public/img/background.jpg");
+  background-size: cover;
+  background-position: center;
+}
+input {
+  background: #000000a1 !important;
+  color: white !important;
+  border: 1px solid white !important;
+}
