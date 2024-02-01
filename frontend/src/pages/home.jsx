@@ -43,7 +43,7 @@ export function Home() {
                   StarBrush.ai
                 </Typography>
               </div>
-              <div className="border-neutral-500 bg-gray mx-auto my-5 min-h-[300px] w-full rounded border-2 border-solid sm:min-h-[500px]">
+              <div className="border-neutral-500 bg-gray mx-auto my-5 min-h-[300px] w-full  rounded border-2 border-solid sm:min-h-[500px] sm:max-w-[500px]">
                 {imgURL && (
                   <Avatar
                     src={imgURL}
