@@ -38,12 +38,12 @@ export function Home() {
         <div className="max-w-8xl container relative mx-auto">
           <div className="flex w-full flex-wrap items-center">
             <div className="mx-auto w-full rounded px-4 pt-8 text-center lg:w-8/12">
-              <div className="mb-5 w-full">
+              <div className="mx-auto mb-5 flex w-full justify-center">
                 <Typography className="tracking text-2xl font-bold uppercase tracking-[5px] text-white">
                   StarBrush.ai
                 </Typography>
               </div>
-              <div className="border-neutral-500 bg-gray mx-auto my-5 h-[500px] w-[500px] rounded border-2 border-solid">
+              <div className="border-neutral-500 bg-gray mx-auto my-5 min-h-[300px] w-full rounded border-2 border-solid sm:min-h-[500px]">
                 {imgURL && (
                   <Avatar
                     src={imgURL}

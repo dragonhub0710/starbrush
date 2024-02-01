@@ -22,7 +22,7 @@ export default defineConfig({
 
   define: {
     "process.env": {
-      REACT_APP_BASED_URL: "http://44.220.151.110/api",
+      REACT_APP_BASED_URL: "https://starbrush.ai/api",
       // REACT_APP_BASED_URL: "http://localhost:3000/api",
     },
   },
