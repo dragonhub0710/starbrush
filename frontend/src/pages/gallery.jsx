@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Button, Avatar, Typography } from "@material-tailwind/react";
 import { useNavigate } from "react-router-dom";
+import { getWithExpiry } from "@/util/services";
 
 export function Gallery() {
   const navigate = useNavigate();
@@ -9,11 +10,12 @@ export function Gallery() {
   const [selectedIdx, setSeletedIdx] = useState(0);
 
   useEffect(() => {
-    let list = JSON.parse(localStorage.getItem("image_urls"));
+    let list = getWithExpiry("image_urls");
     if (list) {
       setImgURLs(list);
     }
-    let selected_idx = localStorage.getItem("selected_idx");
+    let selected_idx = getWithExpiry("selected_idx");
+
     setSeletedIdx(selected_idx);
     setSelectedImg(list[selected_idx]);
   }, []);

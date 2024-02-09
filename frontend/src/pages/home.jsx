@@ -4,6 +4,11 @@ import { Input, Button, Avatar, Typography } from "@material-tailwind/react";
 import { MyLoader } from "@/widgets/loader/MyLoader";
 import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
+import {
+  getWithExpiry,
+  setWithExpiry,
+  getCurrentFormattedTime,
+} from "@/util/services";
 
 export function Home() {
   const navigate = useNavigate();
@@ -13,20 +18,19 @@ export function Home() {
   const [prompt, setPrompt] = useState("");
   const [isShowReportEmail, setIsShowReportEmail] = useState(false);
   const layout_style_up = [
-    "col-span-2 row-span-5",
-    "row-span-2",
-    "row-span-3",
-    "row-span-3",
-    "row-span-2",
+    { layout: "col-span-2 row-span-5", link: "/img/img1.jpg" },
+    { layout: "row-span-2", link: "/img/img2.jpg" },
+    { layout: "row-span-3", link: "/img/img3.jpg" },
+    { layout: "row-span-3", link: "/img/img4.jpg" },
+    { layout: "row-span-2", link: "/img/img5.jpg" },
   ];
-  // const layout_style_down = ["col-span-2 row-span-5", "col-span-2 row-span-5"];
-  // const layout_style_down = [
-  //   "row-span-2",
-  //   "row-span-3",
-  //   "col-span-2 row-span-5",
-  //   "row-span-3",
-  //   "row-span-2",
-  // ];
+  const layout_style_down = [
+    { layout: "row-span-2", link: "/img/img6.jpg" },
+    { layout: "row-span-3", link: "/img/img7.jpg" },
+    { layout: "col-span-2 row-span-5", link: "/img/img8.jpg" },
+    { layout: "row-span-3", link: "/img/img9.jpg" },
+    { layout: "row-span-2", link: "/img/img10.jpg" },
+  ];
 
   const handleScroll = () => {
     if (window.scrollY > 120) {
@@ -37,7 +41,7 @@ export function Home() {
   };
 
   useEffect(() => {
-    let list = JSON.parse(localStorage.getItem("image_urls"));
+    let list = getWithExpiry("image_urls");
     if (list) {
       setImgURLs(list);
     }
@@ -59,7 +63,7 @@ export function Home() {
         if (res.data) {
           let list = [...res.data];
           setImgURLs(list);
-          localStorage.setItem("image_urls", JSON.stringify(list));
+          setWithExpiry("image_urls", list);
         }
         setLoading(false);
         notification.success({ message: "Successfully generated AI images." });
@@ -72,8 +76,11 @@ export function Home() {
   };
 
   const handleViewImage = (idx) => {
-    navigate("/view");
-    localStorage.setItem("selected_idx", idx);
+    console.log(getCurrentFormattedTime());
+    if (imgURLs[idx]) {
+      navigate("/view");
+      setWithExpiry("selected_idx", idx);
+    }
   };
 
   const handleReportEmail = () => {
@@ -135,54 +142,48 @@ export function Home() {
             hasShadow ? "mt-[200px]" : "mt-5"
           }`}
         >
-          {imgURLs.length == 5 && (
-            <div className="my-5 grid w-full grid-cols-4 grid-rows-5 gap-2 sm:h-[300px] sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
-              {layout_style_up.map((item, idx) => {
-                return (
-                  <div
-                    key={idx}
-                    className={`z-0 ${item} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
-                  >
-                    <Avatar
-                      src={imgURLs[idx]}
-                      onClick={() => handleViewImage(idx)}
-                      className="h-full w-full rounded-lg"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )}
-          {/* {imgURLs.length == 7 && (
-            <div className="my-5 grid w-full grid-cols-4 grid-rows-5 gap-2 sm:h-[300px] sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
-              {layout_style_down.map((item, idx) => {
-                return (
-                  <div
-                    key={idx}
-                    className={`z-0 ${item} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
-                  >
-                    <Avatar
-                      src={imgURLs[idx + 5]}
-                      onClick={() => handleViewImage(idx + 5)}
-                      className="h-full w-full rounded-lg"
-                    />
-                  </div>
-                );
-              })}
-            </div>
-          )} */}
-        </div>
-        {imgURLs.length == 5 && (
-          <div className="bottom-background absolute bottom-0 z-20 flex h-28 w-full justify-center">
-            <Button
-              variant="text"
-              onClick={handleReportEmail}
-              className="mt-5 flex h-[40px] items-center justify-center rounded-full border-2 border-black bg-white py-0 text-black shadow-none hover:bg-white hover:shadow-none"
-            >
-              Show More
-            </Button>
+          <div className="my-5 grid w-full grid-cols-4 grid-rows-5 gap-2 sm:h-[300px] sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
+            {layout_style_up.map((item, idx) => {
+              return (
+                <div
+                  key={idx}
+                  className={`z-0 ${item.layout} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
+                >
+                  <Avatar
+                    src={imgURLs[idx] || item.link}
+                    onClick={() => handleViewImage(idx)}
+                    className="h-full w-full rounded-lg"
+                  />
+                </div>
+              );
+            })}
           </div>
-        )}
+          <div className="my-5 grid w-full grid-cols-4 grid-rows-5 gap-2 sm:h-[300px] sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
+            {layout_style_down.map((item, idx) => {
+              return (
+                <div
+                  key={idx}
+                  className={`z-0 ${item.layout} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
+                >
+                  <Avatar
+                    src={imgURLs[idx + 5] || item.link}
+                    onClick={() => handleViewImage(idx + 5)}
+                    className="h-full w-full rounded-lg"
+                  />
+                </div>
+              );
+            })}
+          </div>
+        </div>
+        <div className="bottom-background absolute bottom-0 z-20 flex h-28 w-full justify-center">
+          <Button
+            variant="text"
+            onClick={handleReportEmail}
+            className="mt-5 flex h-[40px] items-center justify-center rounded-full border-2 border-black bg-white py-0 text-black shadow-none hover:bg-white hover:shadow-none"
+          >
+            Show More
+          </Button>
+        </div>
       </div>
       {isShowReportEmail && (
         <div className="fixed right-0 top-0 z-30 flex h-full w-full items-center justify-center rounded-md bg-[#ffffff8f] p-2">
@@ -193,7 +194,7 @@ export function Home() {
               </Button>
             </div>
             <Avatar
-              src="img/Back1.png"
+              src="img/img4.jpg"
               className="h-1/2 w-full rounded-l-lg sm:h-full sm:w-1/2 sm:rounded-r-none"
             />
             <div className="flex h-1/2 w-full flex-col items-center justify-center p-4 sm:h-full sm:w-1/2">
