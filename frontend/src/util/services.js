@@ -3,7 +3,7 @@ export function setWithExpiry(key, value) {
   const now = parseInt(getCurrentFormattedTime());
   const item = {
     value: value,
-    expiry: now + 5 * 60,
+    expiry: now + 30 * 60,
   };
   localStorage.setItem(key, JSON.stringify(item));
 }
