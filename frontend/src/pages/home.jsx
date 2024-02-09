@@ -4,11 +4,7 @@ import { Input, Button, Avatar, Typography } from "@material-tailwind/react";
 import { MyLoader } from "@/widgets/loader/MyLoader";
 import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
-import {
-  getWithExpiry,
-  setWithExpiry,
-  getCurrentFormattedTime,
-} from "@/util/services";
+import { getWithExpiry, setWithExpiry } from "@/util/services";
 
 export function Home() {
   const navigate = useNavigate();
@@ -76,7 +72,6 @@ export function Home() {
   };
 
   const handleViewImage = (idx) => {
-    console.log(getCurrentFormattedTime());
     if (imgURLs[idx]) {
       navigate("/view");
       setWithExpiry("selected_idx", idx);
