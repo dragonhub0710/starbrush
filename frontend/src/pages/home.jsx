@@ -1,13 +1,51 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Input, Button, Avatar, Typography } from "@material-tailwind/react";
 import { MyLoader } from "@/widgets/loader/MyLoader";
 import { notification } from "antd";
+import { useNavigate } from "react-router-dom";
 
 export function Home() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [imgURL, setImgURL] = useState();
+  const [hasShadow, setHasShadow] = useState(false);
+  const [imgURLs, setImgURLs] = useState([]);
   const [prompt, setPrompt] = useState("");
+  const [isShowReportEmail, setIsShowReportEmail] = useState(false);
+  const layout_style_up = [
+    "col-span-2 row-span-5",
+    "row-span-2",
+    "row-span-3",
+    "row-span-3",
+    "row-span-2",
+  ];
+  // const layout_style_down = ["col-span-2 row-span-5", "col-span-2 row-span-5"];
+  // const layout_style_down = [
+  //   "row-span-2",
+  //   "row-span-3",
+  //   "col-span-2 row-span-5",
+  //   "row-span-3",
+  //   "row-span-2",
+  // ];
+
+  const handleScroll = () => {
+    if (window.scrollY > 120) {
+      setHasShadow(true);
+    } else {
+      setHasShadow(false);
+    }
+  };
+
+  useEffect(() => {
+    let list = JSON.parse(localStorage.getItem("image_urls"));
+    if (list) {
+      setImgURLs(list);
+    }
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
 
   const handlePromptChange = (e) => {
     setPrompt(e.target.value);
@@ -15,13 +53,16 @@ export function Home() {
 
   const handleCreateImage = () => {
     setLoading(true);
-    console.log(prompt);
     axios
       .post(`${process.env.REACT_APP_BASED_URL}/image`, { prompt: prompt })
       .then((res) => {
-        setImgURL(res.data);
+        if (res.data) {
+          let list = [...res.data];
+          setImgURLs(list);
+          localStorage.setItem("image_urls", JSON.stringify(list));
+        }
         setLoading(false);
-        notification.success({ message: "Successfully generated AI image." });
+        notification.success({ message: "Successfully generated AI images." });
       })
       .catch((error) => {
         setLoading(false);
@@ -30,50 +71,166 @@ export function Home() {
       });
   };
 
+  const handleViewImage = (idx) => {
+    navigate("/view");
+    localStorage.setItem("selected_idx", idx);
+  };
+
+  const handleReportEmail = () => {
+    setIsShowReportEmail(true);
+  };
+
+  const closeReportEmail = () => {
+    setIsShowReportEmail(false);
+  };
+
   return (
     <>
-      <div className="relative flex h-screen content-center items-center justify-center">
+      <div className="relative flex w-full flex-col">
         {loading && <MyLoader isloading={loading} />}
-        <div className="bg-custom-background absolute top-0 h-full w-full bg-cover bg-center" />
-        <div className="max-w-8xl container relative mx-auto">
-          <div className="flex w-full flex-wrap items-center">
-            <div className="mx-auto w-full rounded px-4 pt-8 text-center lg:w-8/12">
-              <div className="mx-auto mb-5 flex w-full justify-center">
-                <Typography className="tracking text-2xl font-bold uppercase tracking-[5px] text-white">
-                  StarBrush.ai
-                </Typography>
+        <div
+          className={`w-full bg-white ${hasShadow ? "headerWithShadow" : ""}`}
+        >
+          <div className={`container mx-auto flex w-full flex-col px-2 py-5`}>
+            {!hasShadow && (
+              <div>
+                <div className="mb-8 w-full">
+                  <Typography className=" text-base font-bold uppercase tracking-[5px] text-black sm:text-lg">
+                    StarBrush.ai
+                  </Typography>
+                </div>
+                <div className="mb-5 w-full">
+                  <Typography className="text-xl font-bold text-black sm:text-3xl">
+                    Tell us about your dream home
+                  </Typography>
+                </div>
               </div>
-              <div className="border-neutral-500 bg-gray mx-auto my-5 min-h-[300px] w-full  rounded border-2 border-solid sm:min-h-[500px] sm:max-w-[500px]">
-                {imgURL && (
-                  <Avatar
-                    src={imgURL}
-                    variant="rounded"
-                    className="h-full w-full"
-                  />
-                )}
+            )}
+            <div className="relative flex w-full">
+              {hasShadow && (
+                <Avatar src="/img/logo.svg" className="mx-2 h-auto w-10" />
+              )}
+              <Input
+                onChange={handlePromptChange}
+                value={prompt}
+                className="w-full rounded-full px-5 text-base"
+                placeholder="Add your description here"
+                labelProps={{
+                  className: "before:content-none after:content-none",
+                }}
+              ></Input>
+              <div className="absolute right-0 mx-2 flex h-full items-center">
+                <Button
+                  onClick={handleCreateImage}
+                  className="h-[30px] rounded-full bg-black px-[20px] py-[5px] text-white shadow-none hover:shadow-none"
+                >
+                  Build
+                </Button>
               </div>
-              <div className="w-full">
-                <Input
-                  onChange={handlePromptChange}
-                  value={prompt}
-                  labelProps={{
-                    className: "before:content-none after:content-none",
-                  }}
-                />
-                <div className="flex items-center justify-end px-5 py-3">
-                  <Button
-                    size="md"
-                    onClick={handleCreateImage}
-                    className="mx-2 bg-white text-black shadow-none hover:shadow-none"
+            </div>
+          </div>
+        </div>
+        <div
+          className={`container relative mx-auto h-full px-2 ${
+            hasShadow ? "mt-[200px]" : "mt-5"
+          }`}
+        >
+          {imgURLs.length == 5 && (
+            <div className="my-5 grid w-full grid-cols-4 grid-rows-5 gap-2 sm:h-[300px] sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
+              {layout_style_up.map((item, idx) => {
+                return (
+                  <div
+                    key={idx}
+                    className={`z-0 ${item} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
                   >
-                    Generate Image
-                  </Button>
+                    <Avatar
+                      src={imgURLs[idx]}
+                      onClick={() => handleViewImage(idx)}
+                      className="h-full w-full rounded-lg"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+          {/* {imgURLs.length == 7 && (
+            <div className="my-5 grid w-full grid-cols-4 grid-rows-5 gap-2 sm:h-[300px] sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
+              {layout_style_down.map((item, idx) => {
+                return (
+                  <div
+                    key={idx}
+                    className={`z-0 ${item} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
+                  >
+                    <Avatar
+                      src={imgURLs[idx + 5]}
+                      onClick={() => handleViewImage(idx + 5)}
+                      className="h-full w-full rounded-lg"
+                    />
+                  </div>
+                );
+              })}
+            </div>
+          )} */}
+        </div>
+        {imgURLs.length == 5 && (
+          <div className="bottom-background absolute bottom-0 z-20 flex h-28 w-full justify-center">
+            <Button
+              variant="text"
+              onClick={handleReportEmail}
+              className="mt-5 flex h-[40px] items-center justify-center rounded-full border-2 border-black bg-white py-0 text-black shadow-none hover:bg-white hover:shadow-none"
+            >
+              Show More
+            </Button>
+          </div>
+        )}
+      </div>
+      {isShowReportEmail && (
+        <div className="fixed right-0 top-0 z-30 flex h-full w-full items-center justify-center rounded-md bg-[#ffffff8f] p-2">
+          <div className="report-email-container relative h-full max-h-[400px] w-full max-w-[900px] rounded-lg bg-black sm:flex sm:max-h-[600px]">
+            <div className="absolute right-3 top-3 z-40 flex w-full justify-end">
+              <Button variant="text" className="p-0" onClick={closeReportEmail}>
+                <Avatar src="img/close.svg" className="h-auto w-6" />
+              </Button>
+            </div>
+            <Avatar
+              src="img/Back1.png"
+              className="h-1/2 w-full rounded-l-lg sm:h-full sm:w-1/2 sm:rounded-r-none"
+            />
+            <div className="flex h-1/2 w-full flex-col items-center justify-center p-4 sm:h-full sm:w-1/2">
+              <div className="mx-auto max-w-[340px]">
+                <div className="w-full">
+                  <Typography className="text-base font-semibold text-white sm:text-xl md:text-3xl">
+                    Thank you for enjoying the demo of Starbrush
+                  </Typography>
+                </div>
+                <div className="mt-5 w-full">
+                  <Typography
+                    variant="h5"
+                    className="text-base font-normal text-white"
+                  >
+                    Please leave your best contact email to let you when the
+                    full version is out
+                  </Typography>
+                </div>
+                <div className="relative mt-5 flex w-full">
+                  <Input
+                    className="report-email-input w-full rounded-full px-5 text-base"
+                    placeholder="Add your description here"
+                    labelProps={{
+                      className: "before:content-none after:content-none",
+                    }}
+                  ></Input>
+                  <div className="absolute right-0 mx-2 flex h-full items-center">
+                    <Button className="h-[30px] rounded-full bg-black px-[20px] py-[5px] text-white shadow-none hover:shadow-none">
+                      Send
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 }

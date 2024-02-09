@@ -1,12 +1,15 @@
-import { Home } from "@/pages";
-import { HomeIcon } from "@heroicons/react/24/solid";
+import { Gallery, Home } from "@/pages";
 
 export const routes = [
   {
-    icon: HomeIcon,
     name: "Home",
     path: "/",
     element: <Home />,
+  },
+  {
+    name: "Gallery",
+    path: "/view",
+    element: <Gallery />,
   },
 ];
 
