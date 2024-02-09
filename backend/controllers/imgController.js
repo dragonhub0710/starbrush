@@ -6,10 +6,13 @@ const openai = new OpenAI({
 });
 
 async function generateImage(prompt) {
+  const base_prompt =
+    "Please generate a lifelike and photorealistic, high-resolution image of a building from the prompt, focusing on architectural details and realism";
+  const image_prompt = base_prompt + `Prompt: ${prompt}`;
   return openai.images
     .generate({
       model: "dall-e-3",
-      prompt: prompt,
+      prompt: image_prompt,
       n: 1,
       size: "1024x1024",
       quality: "standard",
