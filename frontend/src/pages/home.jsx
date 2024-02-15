@@ -86,6 +86,12 @@ export function Home() {
     setIsShowReportEmail(false);
   };
 
+  const handleKeyDown = (event) => {
+    if (event.key == "Enter") {
+      handleCreateImage();
+    }
+  };
+
   return (
     <>
       <div className="relative flex w-full flex-col">
@@ -115,6 +121,7 @@ export function Home() {
               <Input
                 onChange={handlePromptChange}
                 value={prompt}
+                onKeyDown={handleKeyDown}
                 className="w-full rounded-full px-5 text-base"
                 placeholder="Add your description here"
                 labelProps={{
