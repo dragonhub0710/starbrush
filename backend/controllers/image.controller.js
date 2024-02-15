@@ -1,6 +1,5 @@
 const OpenAI = require("openai");
-const db = require("../models");
-const Prompt = db.prompt;
+const axios = require("axios");
 require("dotenv").config();
 
 const openai = new OpenAI({
@@ -27,17 +26,19 @@ async function generateImage(prompt, base_prompt) {
 const imgGenerator = async (req, res) => {
   const { prompt } = req.body;
   try {
-    const response = await Prompt.findOne({
-      where: { name: "starbrush_image_prompt" },
+    const response = await axios.post(process.env.DATABASE_API, {
+      name: process.env.DATABASE_PROJECT_NAME,
     });
 
-    const firstBatchPrompts = new Array(2).fill(prompt);
-    const firstBatchPromises = firstBatchPrompts.map((prompt) =>
-      generateImage(prompt, response.dataValues.prompt)
-    );
-    const firstBatchUrls = await Promise.all(firstBatchPromises);
+    if (response.data.data.prompt) {
+      const firstBatchPrompts = new Array(process.env.IMAGE_NUM).fill(prompt);
+      const firstBatchPromises = firstBatchPrompts.map((prompt) =>
+        generateImage(prompt, response.data.data.prompt)
+      );
+      const firstBatchUrls = await Promise.all(firstBatchPromises);
 
-    res.json(firstBatchUrls);
+      res.json(firstBatchUrls);
+    }
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: "Internal server error" });
