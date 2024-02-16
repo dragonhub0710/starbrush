@@ -11,17 +11,18 @@ export function Gallery() {
 
   useEffect(() => {
     let list = getWithExpiry("image_urls");
-    if (list) {
-      setImgURLs(list);
-    }
     let selected_idx = getWithExpiry("selected_idx");
-
-    setSeletedIdx(selected_idx);
-    setSelectedImg(list[selected_idx]);
+    if (list.length != 0) {
+      setImgURLs(list);
+      setSeletedIdx(selected_idx);
+      setSelectedImg(list[selected_idx]);
+    }
   }, []);
 
   useEffect(() => {
-    setSelectedImg(imgURLs[selectedIdx]);
+    if (imgURLs.length != 0) {
+      setSelectedImg(imgURLs[selectedIdx]);
+    }
   }, [selectedIdx]);
 
   const handlePrevImage = () => {

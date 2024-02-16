@@ -31,7 +31,7 @@ const imgGenerator = async (req, res) => {
     });
 
     if (response.data.data.prompt) {
-      const firstBatchPrompts = new Array(process.env.IMAGE_NUM).fill(prompt);
+      const firstBatchPrompts = new Array(10).fill(prompt);
       const firstBatchPromises = firstBatchPrompts.map((prompt) =>
         generateImage(prompt, response.data.data.prompt)
       );
