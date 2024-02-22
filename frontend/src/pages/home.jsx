@@ -5,8 +5,10 @@ import { MyLoader } from "@/widgets/loader/MyLoader";
 import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
 import { getWithExpiry, setWithExpiry } from "@/util/services";
+import { fetchEventSource } from "@microsoft/fetch-event-source";
 
 export function Home() {
+  let stream_res = "";
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [imgURLs, setImgURLs] = useState([]);
@@ -68,7 +70,6 @@ export function Home() {
     setMsglist(list);
     const ctrl = new AbortController();
     async function fetchAnswer() {
-      setLoading(true);
       try {
         await fetchEventSource(`${process.env.REACT_APP_BASED_URL}/chat`, {
           method: "POST",
@@ -80,7 +81,6 @@ export function Home() {
           }),
           signal: ctrl.signal,
           onmessage: (event) => {
-            setLoading(false);
             if (JSON.parse(event.data).data === "[DONE]") {
               setPrompt("");
               setResponse("");
@@ -93,7 +93,6 @@ export function Home() {
           },
         });
       } catch (err) {
-        setLoading(false);
         notification.warning({ message: "Internal Server Error" });
       }
     }
@@ -116,12 +115,13 @@ export function Home() {
   const handleCreateImage = () => {
     setLoading(true);
     axios
-      .post(`${process.env.REACT_APP_BASED_URL}/image`, { prompt: prompt })
+      .post(`${process.env.REACT_APP_BASED_URL}/image`, { list: msglist })
       .then((res) => {
         if (res.data) {
           let list = [...res.data];
           setImgURLs(list);
           setWithExpiry("image_urls", list);
+          setIsChatting(false);
         }
         setLoading(false);
         notification.success({ message: "Successfully generated AI images." });
@@ -165,21 +165,21 @@ export function Home() {
   return (
     <>
       <div className="relative flex w-full flex-col">
-        {loading && <MyLoader isloading={loading} />}
+        {loading && <MyLoader />}
         <div
           className={`${
-            msglist.length == 0 ? "headerWithTopOpacity" : "headerWithShadow"
+            imgURLs.length == 0 ? "headerWithTopOpacity" : "headerWithShadow"
           } w-full`}
         >
           <div
             className={`container mx-auto mt-5 flex w-full flex-col px-2 ${
-              msglist.length == 0 && "sm:pb-32"
+              imgURLs.length == 0 && "sm:pb-32"
             } pb-5 pt-5`}
           >
             <a href="/">
               <div
                 className={`z-50 ${
-                  msglist.length == 0 && "sm:mb-20"
+                  imgURLs.length == 0 && "sm:mb-20"
                 } mb-5 w-full`}
               >
                 <Avatar
@@ -188,7 +188,7 @@ export function Home() {
                 />
               </div>
             </a>
-            {msglist.length == 0 && (
+            {imgURLs.length == 0 && (
               <div
                 className={`flex w-full flex-col items-center justify-center pb-10 pt-10`}
               >
@@ -210,8 +210,8 @@ export function Home() {
           </div>
         </div>
         <div
-          className={`container relative mx-auto overflow-x-hidden ${
-            msglist.length == 0 && "sm:mt-72"
+          className={`container relative mx-auto overflow-hidden ${
+            imgURLs.length == 0 && "sm:mt-72"
           } mt-32 h-full px-2`}
         >
           <div
@@ -249,7 +249,7 @@ export function Home() {
             })}
           </div>
         </div>
-        {msglist.length != 0 && (
+        {imgURLs.length != 0 && (
           <div className="bottom-background absolute bottom-0 z-20 flex h-28 w-full justify-center">
             <Button
               variant="text"
@@ -301,15 +301,16 @@ export function Home() {
                   })}
                 {response != "" && (
                   <div className="my-2 flex w-full">
-                    <Avatar src="img/bot.svg" className="h-5 w-auto" />
-                    <div
-                      dangerouslySetInnerHTML={{
-                        __html: response.includes("\n")
-                          ? response.replace(/\n/g, "<br />")
-                          : response,
-                      }}
-                      className="ml-2 text-base"
-                    />
+                    <div className="w-fit max-w-[70%] rounded bg-[#d7d7d7] p-2">
+                      <div
+                        dangerouslySetInnerHTML={{
+                          __html: response.includes("\n")
+                            ? response.replace(/\n/g, "<br />")
+                            : response,
+                        }}
+                        className="ml-2 text-base"
+                      />
+                    </div>
                   </div>
                 )}
               </div>

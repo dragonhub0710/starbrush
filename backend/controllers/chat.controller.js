@@ -1,4 +1,5 @@
 const OpenAI = require("openai");
+const axios = require("axios");
 require("dotenv").config();
 
 const openai = new OpenAI({
@@ -21,7 +22,7 @@ exports.generateRes = async (req, res) => {
       res.write(`data: ${JSON.stringify(responseData)}\n\n`);
     };
     const response = await axios.post(process.env.DATABASE_API, {
-      name: process.env.STARBRUSH_SYSTEMPROMPT,
+      name: process.env.STARBRUSH_CHAT_PROMPT,
     });
     if (response.data.data.prompt) {
       let msgs = [

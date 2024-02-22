@@ -1,18 +1,22 @@
 import React from "react";
-import ClipLoader from "react-spinners/ClipLoader";
+import Lottie from "react-lottie";
+import loading from "../loading.json";
 
-export function MyLoader({ isloading }) {
-
+export function MyLoader() {
+  const defaultOptions = {
+    loop: true,
+    autoplay: true,
+    animationData: loading,
+    rendererSettings: {
+      preserveAspectRatio: "xMidYMid slice",
+    },
+  };
   return (
-    <div className="w-full h-full bg-gray-200 opacity-30 fixed z-10">
-      <div className="h-full flex justify-center items-center">
-        <ClipLoader
-          color={"#020617"}
-          loading={isloading}
-          size={100}
-          aria-label="Loading Spinner"
-          data-testid="loader"
-        />
+    <div className="fixed z-50 h-full w-full bg-white">
+      <div className="flex h-full items-center justify-center">
+        <div className="h-56 w-56">
+          <Lottie options={defaultOptions} isClickToPauseDisabled={true} />
+        </div>
       </div>
     </div>
   );

@@ -24,16 +24,34 @@ async function generateImage(prompt, base_prompt) {
 }
 
 const imgGenerator = async (req, res) => {
-  const { prompt } = req.body;
+  const { list } = req.body;
   try {
-    const response = await axios.post(process.env.DATABASE_API, {
-      name: process.env.DATABASE_PROJECT_NAME,
+    const res_optimize = await axios.post(process.env.DATABASE_API, {
+      name: process.env.STARBRUSH_CHAT_OPTIMIZE_PROMPT,
+    });
+    let msgs = [
+      {
+        role: "system",
+        content: res_optimize.data.data.prompt,
+      },
+    ];
+    for (let i = 0; i < list.length; i++) {
+      msgs.push({ role: list[i].role, content: list[i].content });
+    }
+    const completion = await openai.chat.completions.create({
+      messages: msgs,
+      model: "gpt-3.5-turbo",
+    });
+    const res_image = await axios.post(process.env.DATABASE_API, {
+      name: process.env.STARBRUSH_IMAGE_PROMPT,
     });
 
-    if (response.data.data.prompt) {
-      const firstBatchPrompts = new Array(7).fill(prompt);
+    if (res_image.data.data.prompt) {
+      const firstBatchPrompts = new Array(7).fill(
+        completion.choices[0].message.content
+      );
       const firstBatchPromises = firstBatchPrompts.map((prompt) =>
-        generateImage(prompt, response.data.data.prompt)
+        generateImage(prompt, res_image.data.data.prompt)
       );
       const firstBatchUrls = await Promise.all(firstBatchPromises);
 

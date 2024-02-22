@@ -42,7 +42,7 @@ export function Gallery() {
       <div className="flex w-full flex-col">
         <div className="flex w-full bg-white">
           <div className="container flex w-full items-center px-5 py-2">
-            <Avatar src="/img/logo.svg" className="mx-4 h-auto w-10" />
+            <Avatar src="/img/mark.svg" className="mx-4 h-auto w-10" />
             <Button
               variant="text"
               className="flex items-center"
