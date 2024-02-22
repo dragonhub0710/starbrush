@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import { Input, Button, Avatar, Typography } from "@material-tailwind/react";
 import { MyLoader } from "@/widgets/loader/MyLoader";
@@ -9,46 +9,108 @@ import { getWithExpiry, setWithExpiry } from "@/util/services";
 export function Home() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
-  const [hasShadow, setHasShadow] = useState(false);
   const [imgURLs, setImgURLs] = useState([]);
   const [prompt, setPrompt] = useState("");
   const [isShowReportEmail, setIsShowReportEmail] = useState(false);
+  const [isChatting, setIsChatting] = useState(false);
+  const [msglist, setMsglist] = useState([]);
+  const chatWindowRef = useRef(null);
+  const [response, setResponse] = useState("");
+  const [isMobile, setIsMobile] = useState(false);
+
   const layout_style_up = [
-    { layout: "col-span-2 row-span-5", link: "/img/img1.jpg" },
-    { layout: "row-span-2", link: "/img/img2.jpg" },
-    { layout: "row-span-3", link: "/img/img3.jpg" },
-    { layout: "row-span-3", link: "/img/img4.jpg" },
-    { layout: "row-span-2", link: "/img/img5.jpg" },
+    { layout: "sm:col-span-2 sm:row-span-5", link: "/img/img1.jpg" },
+    { layout: "sm:row-span-2", link: "/img/img2.jpg" },
+    {
+      layout: "sm:row-span-3 sm:col-span-1 row-span-2 col-span-2",
+      link: "/img/img3.jpg",
+    },
+    { layout: "sm:row-span-3", link: "/img/img4.jpg" },
+    { layout: "sm:row-span-2", link: "/img/img5.jpg" },
   ];
   const layout_style_down = [
-    { layout: "row-span-2", link: "/img/img6.jpg" },
-    { layout: "row-span-3", link: "/img/img7.jpg" },
-    { layout: "col-span-2 row-span-5", link: "/img/img8.jpg" },
-    { layout: "row-span-3", link: "/img/img9.jpg" },
-    { layout: "row-span-2", link: "/img/img10.jpg" },
+    { layout: "sm:row-span-2", link: "/img/img6.jpg" },
+    { layout: "sm:row-span-3", link: "/img/img7.jpg" },
+    {
+      layout: "sm:col-span-2 sm:row-span-5 row-span-2 col-span-2",
+      link: "/img/img8.jpg",
+    },
+    { layout: "sm:row-span-3", link: "/img/img9.jpg" },
+    { layout: "sm:row-span-2", link: "/img/img10.jpg" },
   ];
 
-  const handleScroll = () => {
-    if (window.scrollY > 120) {
-      setHasShadow(true);
-    } else {
-      setHasShadow(false);
-    }
-  };
-
   useEffect(() => {
+    setIsMobile(screen.width > 640);
     let list = getWithExpiry("image_urls");
     if (list) {
       setImgURLs(list);
     }
-    window.addEventListener("scroll", handleScroll);
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-    };
   }, []);
+
+  useEffect(() => {
+    if (msglist.length != 0) {
+      const chatWindow = chatWindowRef.current;
+      chatWindow.scrollTop = chatWindow.scrollHeight;
+    }
+  }, [msglist]);
 
   const handlePromptChange = (e) => {
     setPrompt(e.target.value);
+  };
+
+  const handleSubmitChat = () => {
+    const item = {
+      role: "user",
+      content: prompt,
+    };
+    let list = [...msglist];
+    list.push(item);
+    setMsglist(list);
+    const ctrl = new AbortController();
+    async function fetchAnswer() {
+      setLoading(true);
+      try {
+        await fetchEventSource(`${process.env.REACT_APP_BASED_URL}/chat`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            list: list,
+          }),
+          signal: ctrl.signal,
+          onmessage: (event) => {
+            setLoading(false);
+            if (JSON.parse(event.data).data === "[DONE]") {
+              setPrompt("");
+              setResponse("");
+              updateMsgList(stream_res);
+              ctrl.abort();
+            } else {
+              stream_res += JSON.parse(event.data).data;
+              setResponse((response) => response + JSON.parse(event.data).data);
+            }
+          },
+        });
+      } catch (err) {
+        setLoading(false);
+        notification.warning({ message: "Internal Server Error" });
+      }
+    }
+    fetchAnswer();
+  };
+
+  const updateMsgList = (answer) => {
+    let list = [...msglist];
+    list.push({
+      role: "user",
+      content: prompt,
+    });
+    list.push({
+      role: "assistant",
+      content: answer,
+    });
+    setMsglist(list);
   };
 
   const handleCreateImage = () => {
@@ -88,8 +150,16 @@ export function Home() {
 
   const handleKeyDown = (event) => {
     if (event.key == "Enter") {
-      handleCreateImage();
+      handleSubmitChat();
     }
+  };
+
+  const handleStartChat = () => {
+    setIsChatting(true);
+  };
+
+  const closeChatting = () => {
+    setIsChatting(false);
   };
 
   return (
@@ -97,54 +167,56 @@ export function Home() {
       <div className="relative flex w-full flex-col">
         {loading && <MyLoader isloading={loading} />}
         <div
-          className={`w-full bg-white ${hasShadow ? "headerWithShadow" : ""}`}
+          className={`${
+            msglist.length == 0 ? "headerWithTopOpacity" : "headerWithShadow"
+          } w-full`}
         >
-          <div className={`container mx-auto flex w-full flex-col px-2 py-5`}>
-            {!hasShadow && (
-              <div>
-                <div className="mb-8 w-full">
-                  <Typography className=" text-base font-bold uppercase tracking-[5px] text-black sm:text-lg">
-                    StarBrush.ai
-                  </Typography>
-                </div>
-                <div className="mb-5 w-full">
+          <div
+            className={`container mx-auto mt-5 flex w-full flex-col px-2 ${
+              msglist.length == 0 && "sm:pb-32"
+            } pb-5 pt-5`}
+          >
+            <a href="/">
+              <div
+                className={`z-50 ${
+                  msglist.length == 0 && "sm:mb-20"
+                } mb-5 w-full`}
+              >
+                <Avatar
+                  src="img/logo.svg"
+                  className="h-auto w-56 rounded-none"
+                />
+              </div>
+            </a>
+            {msglist.length == 0 && (
+              <div
+                className={`flex w-full flex-col items-center justify-center pb-10 pt-10`}
+              >
+                <div className="mb-2 w-full ">
                   <Typography className="text-xl font-bold text-black sm:text-3xl">
                     Tell us about your dream home
                   </Typography>
                 </div>
+                <div className="relative mt-5 flex w-full">
+                  <Button
+                    onClick={handleStartChat}
+                    className="h-[40px] rounded-full bg-black px-[20px] py-[5px] text-sm font-medium tracking-[2px] text-white shadow-none hover:shadow-none"
+                  >
+                    START CONVERSATION
+                  </Button>
+                </div>
               </div>
             )}
-            <div className="relative flex w-full">
-              {hasShadow && (
-                <Avatar src="/img/logo.svg" className="mx-2 h-auto w-10" />
-              )}
-              <Input
-                onChange={handlePromptChange}
-                value={prompt}
-                onKeyDown={handleKeyDown}
-                className="w-full rounded-full px-5 text-base"
-                placeholder="Add your description here"
-                labelProps={{
-                  className: "before:content-none after:content-none",
-                }}
-              ></Input>
-              <div className="absolute right-0 mx-2 flex h-full items-center">
-                <Button
-                  onClick={handleCreateImage}
-                  className="h-[30px] rounded-full bg-black px-[20px] py-[5px] text-white shadow-none hover:shadow-none"
-                >
-                  Build
-                </Button>
-              </div>
-            </div>
           </div>
         </div>
         <div
-          className={`container relative mx-auto h-full px-2 ${
-            hasShadow ? "mt-[200px]" : "mt-5"
-          }`}
+          className={`container relative mx-auto overflow-x-hidden ${
+            msglist.length == 0 && "sm:mt-72"
+          } mt-32 h-full px-2`}
         >
-          <div className="my-5 grid w-full grid-cols-4 grid-rows-5 gap-2 sm:h-[300px] sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
+          <div
+            className={`my-5 grid h-[600px] w-full grid-cols-2 grid-rows-4 gap-2 sm:h-[300px] sm:grid-cols-4 sm:grid-rows-5 sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]`}
+          >
             {layout_style_up.map((item, idx) => {
               return (
                 <div
@@ -160,7 +232,7 @@ export function Home() {
               );
             })}
           </div>
-          <div className="my-5 grid w-full grid-cols-4 grid-rows-5 gap-2 sm:h-[300px] sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
+          <div className="my-5 grid h-[600px] w-full grid-cols-2 grid-rows-4 gap-2 sm:h-[300px] sm:grid-cols-4 sm:grid-rows-5 sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]">
             {layout_style_down.map((item, idx) => {
               return (
                 <div
@@ -177,19 +249,106 @@ export function Home() {
             })}
           </div>
         </div>
-        <div className="bottom-background absolute bottom-0 z-20 flex h-28 w-full justify-center">
-          <Button
-            variant="text"
-            onClick={handleReportEmail}
-            className="mt-5 flex h-[40px] items-center justify-center rounded-full border-2 border-black bg-white py-0 text-black shadow-none hover:bg-white hover:shadow-none"
-          >
-            Show More
-          </Button>
-        </div>
+        {msglist.length != 0 && (
+          <div className="bottom-background absolute bottom-0 z-20 flex h-28 w-full justify-center">
+            <Button
+              variant="text"
+              onClick={handleReportEmail}
+              className="mt-5 flex h-[40px] items-center justify-center rounded-full border-2 border-black bg-white py-0 text-black shadow-none hover:bg-white hover:shadow-none"
+            >
+              Show More
+            </Button>
+          </div>
+        )}
       </div>
+      {isChatting && (
+        <div className="fixed right-0 top-0 z-30 flex h-full w-full items-center justify-center rounded-md bg-[#ffffff8f] p-2">
+          <div className="modal-container h-full w-full rounded-lg bg-black sm:max-h-[700px] sm:max-w-[900px]">
+            <div className="relative flex h-16 w-full items-center justify-center px-3 ">
+              <Avatar src="/img/mark-white.svg" className="h-auto w-10" />
+              <div className="absolute right-0 top-0">
+                <Button variant="text" className=" p-2" onClick={closeChatting}>
+                  <Avatar src="img/close.svg" className="h-6 w-6" />
+                </Button>
+              </div>
+            </div>
+            <div className="flex h-full w-full flex-col justify-between bg-white p-4">
+              <div
+                className="flex h-full w-full flex-col overflow-y-auto px-2"
+                ref={chatWindowRef}
+              >
+                {msglist &&
+                  msglist.map((item, idx) => {
+                    return (
+                      <div
+                        key={idx}
+                        className={`my-2 flex w-full ${
+                          item.role == "user" ? "justify-end" : "justify-start"
+                        }`}
+                      >
+                        <div className="w-fit max-w-[70%] rounded bg-[#d7d7d7] p-2">
+                          <div
+                            dangerouslySetInnerHTML={{
+                              __html: item.content.includes("\n")
+                                ? item.content.replace(/\n/g, "<br />")
+                                : item.content,
+                            }}
+                            className="text-base"
+                          />
+                        </div>
+                      </div>
+                    );
+                  })}
+                {response != "" && (
+                  <div className="my-2 flex w-full">
+                    <Avatar src="img/bot.svg" className="h-5 w-auto" />
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: response.includes("\n")
+                          ? response.replace(/\n/g, "<br />")
+                          : response,
+                      }}
+                      className="ml-2 text-base"
+                    />
+                  </div>
+                )}
+              </div>
+              <div className="relative mb-5 mt-2 flex w-full">
+                <div className="relative flex w-full">
+                  <Input
+                    onChange={handlePromptChange}
+                    value={prompt}
+                    onKeyDown={handleKeyDown}
+                    className="w-full rounded-full px-5 text-base"
+                    placeholder="Add your description here"
+                    labelProps={{
+                      className: "before:content-none after:content-none",
+                    }}
+                  ></Input>
+                  <div className="absolute right-0 mx-2 flex h-full items-center">
+                    <Button
+                      onClick={handleSubmitChat}
+                      variant="text"
+                      className="mx-2 h-full w-fit p-0"
+                    >
+                      <Avatar src="img/plus.svg" className="mx-2 h-5 w-5" />
+                    </Button>
+                    <Button
+                      onClick={handleCreateImage}
+                      className="h-[30px] rounded-full bg-black px-[20px] py-[5px] text-white shadow-none hover:shadow-none"
+                    >
+                      Build
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
       {isShowReportEmail && (
         <div className="fixed right-0 top-0 z-30 flex h-full w-full items-center justify-center rounded-md bg-[#ffffff8f] p-2">
-          <div className="report-email-container relative h-full max-h-[400px] w-full max-w-[900px] rounded-lg bg-black sm:flex sm:max-h-[600px]">
+          <div className="modal-container relative h-full max-h-[400px] w-full max-w-[900px] rounded-lg bg-black sm:flex sm:max-h-[600px]">
             <div className="absolute right-3 top-3 z-40 flex w-full justify-end">
               <Button variant="text" className="p-0" onClick={closeReportEmail}>
                 <Avatar src="img/close.svg" className="h-auto w-6" />

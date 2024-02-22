@@ -10,6 +10,7 @@ app.use(express.json());
 process.setMaxListeners(0);
 
 // Define Routes
+app.use("/api/chat", require("./routers/chat.router"));
 app.use("/api/image", require("./routers/image.router"));
 
 // Error handling middleware

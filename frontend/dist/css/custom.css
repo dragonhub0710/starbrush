@@ -7,7 +7,7 @@ input {
   background: rgba(0, 0, 0, 0.075) !important;
   color: rgb(0, 0, 0) !important;
   border: unset !important;
-  padding-right: 90px !important;
+  padding-right: 130px !important;
 }
 /* width */
 ::-webkit-scrollbar {
@@ -30,9 +30,34 @@ input {
 }
 
 .headerWithShadow {
+  background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
   position: fixed;
   top: 0;
+  z-index: 20;
+}
+.headerWithTopOpacity {
+  background-image: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 1)
+  );
+  position: fixed;
+  top: 0;
+  z-index: 20;
+}
+.headerWithBottomOpacity {
+  background-image: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 1),
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0)
+  );
+  position: fixed;
+  bottom: 0;
   z-index: 20;
 }
 .bottom-background {
@@ -42,7 +67,7 @@ input {
     rgba(255, 255, 255, 1)
   );
 }
-.report-email-container {
+.modal-container {
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 10px 0 rgba(0, 0, 0, 0.3);
 }
 
