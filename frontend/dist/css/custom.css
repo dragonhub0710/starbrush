@@ -77,3 +77,6 @@ input {
   border: unset !important;
   padding-right: 90px !important;
 }
+.chat-container {
+  height: calc(100% - 64px);
+}

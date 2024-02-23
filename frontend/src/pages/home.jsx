@@ -6,6 +6,7 @@ import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
 import { getWithExpiry, setWithExpiry } from "@/util/services";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
+import { TypeWriter } from "@/widgets/TypeWriter/TypeWriter";
 
 export function Home() {
   let stream_res = "";
@@ -18,7 +19,6 @@ export function Home() {
   const [msglist, setMsglist] = useState([]);
   const chatWindowRef = useRef(null);
   const [response, setResponse] = useState("");
-  const [isMobile, setIsMobile] = useState(false);
 
   const layout_style_up = [
     { layout: "sm:col-span-2 sm:row-span-5", link: "/img/img1.jpg" },
@@ -42,15 +42,22 @@ export function Home() {
   ];
 
   useEffect(() => {
-    setIsMobile(screen.width > 640);
     let list = getWithExpiry("image_urls");
     if (list) {
       setImgURLs(list);
     }
+    let msg_list = [];
+    msg_list.push({
+      role: "assistant",
+      content: `Hey I'm Sam from Starbrush. I'm able to create any inspiration for your dream home or architecture project!
+Let's start by knowing what you'd like to visualise?
+A house? Interior decoration? Or even a piece of furniture you want to create?`,
+    });
+    setMsglist(msg_list);
   }, []);
 
   useEffect(() => {
-    if (msglist.length != 0) {
+    if (msglist.length > 1) {
       const chatWindow = chatWindowRef.current;
       chatWindow.scrollTop = chatWindow.scrollHeight;
     }
@@ -262,19 +269,19 @@ export function Home() {
         )}
       </div>
       {isChatting && (
-        <div className="fixed right-0 top-0 z-30 flex h-full w-full items-center justify-center rounded-md bg-[#ffffff8f] p-2">
-          <div className="modal-container h-full w-full rounded-lg bg-black sm:max-h-[700px] sm:max-w-[900px]">
-            <div className="relative flex h-16 w-full items-center justify-center px-3 ">
+        <div className="fixed right-0 top-0 z-30 flex h-full w-full items-center justify-center bg-[#ffffff8f] p-2">
+          <div className="modal-container h-full max-h-[700px] w-full rounded-lg sm:max-w-[900px]">
+            <div className="relative flex h-16 w-full items-center justify-center bg-black px-3">
               <Avatar src="/img/mark-white.svg" className="h-auto w-10" />
               <div className="absolute right-0 top-0">
-                <Button variant="text" className=" p-2" onClick={closeChatting}>
+                <Button variant="text" className="p-2" onClick={closeChatting}>
                   <Avatar src="img/close.svg" className="h-6 w-6" />
                 </Button>
               </div>
             </div>
-            <div className="flex h-full w-full flex-col justify-between bg-white p-4">
+            <div className="chat-container flex w-full flex-col justify-between bg-[#fff] opacity-90">
               <div
-                className="flex h-full w-full flex-col overflow-y-auto px-2"
+                className="flex h-full w-full flex-col overflow-y-auto p-4"
                 ref={chatWindowRef}
               >
                 {msglist &&
@@ -287,14 +294,22 @@ export function Home() {
                         }`}
                       >
                         <div className="w-fit max-w-[70%] rounded bg-[#d7d7d7] p-2">
-                          <div
-                            dangerouslySetInnerHTML={{
-                              __html: item.content.includes("\n")
-                                ? item.content.replace(/\n/g, "<br />")
-                                : item.content,
-                            }}
-                            className="text-base"
-                          />
+                          {idx == 0 ? (
+                            <TypeWriter
+                              content={item.content}
+                              box_ref={chatWindowRef}
+                              speed={5}
+                            />
+                          ) : (
+                            <div
+                              dangerouslySetInnerHTML={{
+                                __html: item.content.includes("\n")
+                                  ? item.content.replace(/\n/g, "<br />")
+                                  : item.content,
+                              }}
+                              className="text-base"
+                            />
+                          )}
                         </div>
                       </div>
                     );
@@ -314,7 +329,7 @@ export function Home() {
                   </div>
                 )}
               </div>
-              <div className="relative mb-5 mt-2 flex w-full">
+              <div className="relative my-2 flex w-full border-t-[1px] border-black p-4">
                 <div className="relative flex w-full">
                   <Input
                     onChange={handlePromptChange}
