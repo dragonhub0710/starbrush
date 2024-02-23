@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { getWithExpiry, setWithExpiry } from "@/util/services";
 import { fetchEventSource } from "@microsoft/fetch-event-source";
 import { TypeWriter } from "@/widgets/TypeWriter/TypeWriter";
+import { LazyLoadImage } from "react-lazy-load-image-component";
+import "react-lazy-load-image-component/src/effects/blur.css";
 
 export function Home() {
   let stream_res = "";
@@ -19,9 +21,13 @@ export function Home() {
   const [msglist, setMsglist] = useState([]);
   const chatWindowRef = useRef(null);
   const [response, setResponse] = useState("");
+  const [isLazyloading, setIsLazyloading] = useState(false);
 
   const layout_style_up = [
-    { layout: "sm:col-span-2 sm:row-span-5", link: "/img/img1.jpg" },
+    {
+      layout: "sm:col-span-2 sm:row-span-5",
+      link: "/img/img1.jpg",
+    },
     { layout: "sm:row-span-2", link: "/img/img2.jpg" },
     {
       layout: "sm:row-span-3 sm:col-span-1 row-span-2 col-span-2",
@@ -45,6 +51,9 @@ export function Home() {
     let list = getWithExpiry("image_urls");
     if (list) {
       setImgURLs(list);
+      setIsLazyloading(true);
+    } else {
+      setIsLazyloading(false);
     }
     let msg_list = [];
     msg_list.push({
@@ -129,6 +138,7 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
           setImgURLs(list);
           setWithExpiry("image_urls", list);
           setIsChatting(false);
+          setIsLazyloading(true);
         }
         setLoading(false);
         notification.success({ message: "Successfully generated AI images." });
@@ -219,7 +229,7 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
         <div
           className={`container relative mx-auto overflow-hidden ${
             imgURLs.length == 0 && "sm:mt-72"
-          } mt-32 h-full px-2`}
+          } mb-2 mt-32 h-full p-8`}
         >
           <div
             className={`my-5 grid h-[600px] w-full grid-cols-2 grid-rows-4 gap-2 sm:h-[300px] sm:grid-cols-4 sm:grid-rows-5 sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]`}
@@ -230,11 +240,24 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
                   key={idx}
                   className={`z-0 ${item.layout} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
                 >
-                  <Avatar
-                    src={imgURLs[idx] || item.link}
-                    onClick={() => handleViewImage(idx)}
-                    className="h-full w-full rounded-lg"
-                  />
+                  {isLazyloading ? (
+                    <LazyLoadImage
+                      src={imgURLs[idx]}
+                      width={"100%"}
+                      height={"100%"}
+                      effect="blur" // Optional: Apply a blur effect
+                      onClick={() => handleViewImage(idx)}
+                      className="h-full w-full rounded-lg"
+                    />
+                  ) : (
+                    <LazyLoadImage
+                      src={item.link}
+                      width={"100%"}
+                      height={"100%"}
+                      effect="blur" // Optional: Apply a blur effect
+                      className="h-full w-full rounded-lg"
+                    />
+                  )}
                 </div>
               );
             })}
@@ -246,11 +269,24 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
                   key={idx}
                   className={`z-0 ${item.layout} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
                 >
-                  <Avatar
-                    src={imgURLs[idx + 5] || item.link}
-                    onClick={() => handleViewImage(idx + 5)}
-                    className="h-full w-full rounded-lg"
-                  />
+                  {isLazyloading ? (
+                    <LazyLoadImage
+                      src={imgURLs[idx + 5]}
+                      width={"100%"}
+                      height={"100%"}
+                      effect="blur" // Optional: Apply a blur effect
+                      onClick={() => handleViewImage(idx + 5)}
+                      className="h-full w-full rounded-lg"
+                    />
+                  ) : (
+                    <LazyLoadImage
+                      src={item.link}
+                      width={"100%"}
+                      height={"100%"}
+                      effect="blur" // Optional: Apply a blur effect
+                      className="h-full w-full rounded-lg"
+                    />
+                  )}
                 </div>
               );
             })}
