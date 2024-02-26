@@ -8,14 +8,20 @@ export function Gallery() {
   const [imgURLs, setImgURLs] = useState([]);
   const [selectedImg, setSelectedImg] = useState("");
   const [selectedIdx, setSeletedIdx] = useState(0);
+  const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
+    if (screen.width < 640) {
+      setIsMobile(true);
+    }
     let list = getWithExpiry("image_urls");
     let selected_idx = getWithExpiry("selected_idx");
     if (list.length != 0) {
       setImgURLs(list);
       setSeletedIdx(selected_idx);
       setSelectedImg(list[selected_idx]);
+    } else {
+      navigate("/");
     }
   }, []);
 
@@ -41,24 +47,50 @@ export function Gallery() {
     <>
       <div className="flex w-full flex-col">
         <div className="flex w-full bg-white">
-          <div className="container flex w-full items-center px-5 py-2">
-            <Avatar src="/img/mark.svg" className="mx-4 h-auto w-10" />
-            <Button
-              variant="text"
-              className="flex items-center"
-              onClick={handleBack}
-            >
-              <Avatar src="img/prev.svg" className="mx-2 h-5 w-auto" />
-              <Typography
-                varient="h3"
-                className="text-base font-bold uppercase text-black"
+          {isMobile ? (
+            <div className="header-shadow relative flex h-[90px] w-full items-center justify-between px-8">
+              <a href="/">
+                <Avatar
+                  src="img/logo.svg"
+                  className="h-auto w-56 rounded-none"
+                />
+              </a>
+            </div>
+          ) : (
+            <div className="container flex w-full items-center px-5 py-2">
+              <Avatar src="/img/mark.svg" className="ml-4 h-auto w-10" />
+              <Button
+                variant="text"
+                className="flex items-center"
+                onClick={handleBack}
               >
-                Gallery
-              </Typography>
-            </Button>
-          </div>
+                <Avatar src="img/prev.svg" className="mr-2 h-5 w-auto" />
+                <Typography
+                  varient="h3"
+                  className="text-base font-bold uppercase text-black"
+                >
+                  Gallery
+                </Typography>
+              </Button>
+            </div>
+          )}
         </div>
-        <div className="container mx-auto flex flex-col items-center justify-center px-2">
+        {isMobile && (
+          <Button
+            variant="text"
+            className="flex items-center pt-5"
+            onClick={handleBack}
+          >
+            <Avatar src="img/prev.svg" className="mx-2 h-5 w-auto" />
+            <Typography
+              varient="h3"
+              className="text-base font-bold uppercase text-black"
+            >
+              Gallery
+            </Typography>
+          </Button>
+        )}
+        <div className="container mx-auto flex flex-col items-center justify-center px-8 pt-12">
           <Avatar
             src={selectedImg}
             className="h-auto w-full max-w-[600px]"

@@ -7,7 +7,7 @@ input {
   background: rgba(0, 0, 0, 0.075) !important;
   color: rgb(0, 0, 0) !important;
   border: unset !important;
-  padding-right: 130px !important;
+  padding-right: 50px !important;
 }
 /* width */
 ::-webkit-scrollbar {
@@ -29,13 +29,44 @@ input {
   cursor: default;
 }
 
-.headerWithShadow {
+.header-shadow {
   background-color: white;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-  position: fixed;
-  top: 0;
-  z-index: 20;
 }
+
+.header-no-shadow {
+  background-image: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 1)
+  );
+}
+
+.chatting-header-shadow {
+  background-color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0);
+}
+
+.navbar-top {
+  background-image: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 0),
+    rgba(255, 255, 255, 0.6),
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.9)
+  );
+}
+
+.navbar-bottom {
+  background-image: linear-gradient(
+    to top,
+    rgba(255, 255, 255, 1),
+    rgba(255, 255, 255, 0.9),
+    rgba(255, 255, 255, 0.4),
+    rgba(255, 255, 255, 0)
+  );
+}
+
 .headerWithTopOpacity {
   background-image: linear-gradient(
     to top,
@@ -79,4 +110,8 @@ input {
 }
 .chat-container {
   height: calc(100% - 64px);
+}
+
+.chat-mobile-container {
+  height: calc(100% - 90px);
 }

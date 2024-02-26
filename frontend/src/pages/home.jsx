@@ -1,27 +1,25 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Input, Button, Avatar, Typography } from "@material-tailwind/react";
 import { MyLoader } from "@/widgets/loader/MyLoader";
 import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
 import { getWithExpiry, setWithExpiry } from "@/util/services";
-import { fetchEventSource } from "@microsoft/fetch-event-source";
-import { TypeWriter } from "@/widgets/TypeWriter/TypeWriter";
 import { LazyLoadImage } from "react-lazy-load-image-component";
 import "react-lazy-load-image-component/src/effects/blur.css";
+import Header from "@/widgets/header/header";
+import Navbar from "@/widgets/navbar/navbar";
+import Chatting from "@/widgets/chatting/chatting";
 
 export function Home() {
-  let stream_res = "";
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [imgURLs, setImgURLs] = useState([]);
-  const [prompt, setPrompt] = useState("");
   const [isShowReportEmail, setIsShowReportEmail] = useState(false);
   const [isChatting, setIsChatting] = useState(false);
-  const [msglist, setMsglist] = useState([]);
-  const chatWindowRef = useRef(null);
-  const [response, setResponse] = useState("");
   const [isLazyloading, setIsLazyloading] = useState(false);
+  const [isShadow, setIsShadow] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
 
   const layout_style_up = [
     {
@@ -48,6 +46,9 @@ export function Home() {
   ];
 
   useEffect(() => {
+    if (screen.width < 640) {
+      setIsMobile(true);
+    }
     let list = getWithExpiry("image_urls");
     if (list) {
       setImgURLs(list);
@@ -55,87 +56,17 @@ export function Home() {
     } else {
       setIsLazyloading(false);
     }
-    let msg_list = [];
-    msg_list.push({
-      role: "assistant",
-      content: `Hey I'm Sam from Starbrush. I'm able to create any inspiration for your dream home or architecture project!
-Let's start by knowing what you'd like to visualise?
-A house? Interior decoration? Or even a piece of furniture you want to create?`,
-    });
-    setMsglist(msg_list);
   }, []);
 
-  useEffect(() => {
-    if (msglist.length > 1) {
-      const chatWindow = chatWindowRef.current;
-      chatWindow.scrollTop = chatWindow.scrollHeight;
-    }
-  }, [msglist]);
-
-  const handlePromptChange = (e) => {
-    setPrompt(e.target.value);
-  };
-
-  const handleSubmitChat = () => {
-    const item = {
-      role: "user",
-      content: prompt,
-    };
-    let list = [...msglist];
-    list.push(item);
-    setMsglist(list);
-    const ctrl = new AbortController();
-    async function fetchAnswer() {
-      try {
-        await fetchEventSource(`${process.env.REACT_APP_BASED_URL}/chat`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            list: list,
-          }),
-          signal: ctrl.signal,
-          onmessage: (event) => {
-            if (JSON.parse(event.data).data === "[DONE]") {
-              setPrompt("");
-              setResponse("");
-              updateMsgList(stream_res);
-              ctrl.abort();
-            } else {
-              stream_res += JSON.parse(event.data).data;
-              setResponse((response) => response + JSON.parse(event.data).data);
-            }
-          },
-        });
-      } catch (err) {
-        notification.warning({ message: "Internal Server Error" });
-      }
-    }
-    fetchAnswer();
-  };
-
-  const updateMsgList = (answer) => {
-    let list = [...msglist];
-    list.push({
-      role: "user",
-      content: prompt,
-    });
-    list.push({
-      role: "assistant",
-      content: answer,
-    });
-    setMsglist(list);
-  };
-
-  const handleCreateImage = () => {
+  const handleCreateImage = (msg_list) => {
     setLoading(true);
     axios
-      .post(`${process.env.REACT_APP_BASED_URL}/image`, { list: msglist })
+      .post(`${process.env.REACT_APP_BASED_URL}/image`, { list: msg_list })
       .then((res) => {
         if (res.data) {
           let list = [...res.data];
           setImgURLs(list);
+          setIsShadow(true);
           setWithExpiry("image_urls", list);
           setIsChatting(false);
           setIsLazyloading(true);
@@ -165,12 +96,6 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
     setIsShowReportEmail(false);
   };
 
-  const handleKeyDown = (event) => {
-    if (event.key == "Enter") {
-      handleSubmitChat();
-    }
-  };
-
   const handleStartChat = () => {
     setIsChatting(true);
   };
@@ -182,54 +107,13 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
   return (
     <>
       <div className="relative flex w-full flex-col">
-        {loading && <MyLoader />}
-        <div
-          className={`${
-            imgURLs.length == 0 ? "headerWithTopOpacity" : "headerWithShadow"
-          } w-full`}
-        >
-          <div
-            className={`container mx-auto mt-5 flex w-full flex-col px-2 ${
-              imgURLs.length == 0 && "sm:pb-32"
-            } pb-5 pt-5`}
-          >
-            <a href="/">
-              <div
-                className={`z-50 ${
-                  imgURLs.length == 0 && "sm:mb-20"
-                } mb-5 w-full`}
-              >
-                <Avatar
-                  src="img/logo.svg"
-                  className="h-auto w-56 rounded-none"
-                />
-              </div>
-            </a>
-            {imgURLs.length == 0 && (
-              <div
-                className={`flex w-full flex-col items-center justify-center pb-10 pt-10`}
-              >
-                <div className="mb-2 w-full ">
-                  <Typography className="text-xl font-bold text-black sm:text-3xl">
-                    Tell us about your dream home
-                  </Typography>
-                </div>
-                <div className="relative mt-5 flex w-full">
-                  <Button
-                    onClick={handleStartChat}
-                    className="h-[40px] rounded-full bg-black px-[20px] py-[5px] text-sm font-medium tracking-[2px] text-white shadow-none hover:shadow-none"
-                  >
-                    START CONVERSATION
-                  </Button>
-                </div>
-              </div>
-            )}
-          </div>
-        </div>
+        {loading && <MyLoader isShadow={isShadow} />}
+        <Header isShadow={imgURLs.length > 0 ? true : false} />
+        {imgURLs.length == 0 && <Navbar onStartChat={handleStartChat} />}
         <div
           className={`container relative mx-auto overflow-hidden ${
-            imgURLs.length == 0 && "sm:mt-72"
-          } mb-2 mt-32 h-full p-8`}
+            isMobile || imgURLs.length > 0 ? "mt-16" : "mt-48"
+          } mb-2 h-full p-8`}
         >
           <div
             className={`my-5 grid h-[600px] w-full grid-cols-2 grid-rows-4 gap-2 sm:h-[300px] sm:grid-cols-4 sm:grid-rows-5 sm:gap-3 md:h-[400px] md:gap-5 lg:h-[500px]`}
@@ -238,14 +122,14 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
               return (
                 <div
                   key={idx}
-                  className={`z-0 ${item.layout} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
+                  className={`z-0 ${item.layout} transform cursor-pointer rounded-lg border-[2px] bg-[#9c9c9c] transition-all duration-300 hover:z-10 hover:scale-110`}
                 >
                   {isLazyloading ? (
                     <LazyLoadImage
                       src={imgURLs[idx]}
                       width={"100%"}
                       height={"100%"}
-                      effect="blur" // Optional: Apply a blur effect
+                      effect="blur"
                       onClick={() => handleViewImage(idx)}
                       className="h-full w-full rounded-lg"
                     />
@@ -254,7 +138,7 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
                       src={item.link}
                       width={"100%"}
                       height={"100%"}
-                      effect="blur" // Optional: Apply a blur effect
+                      effect="blur"
                       className="h-full w-full rounded-lg"
                     />
                   )}
@@ -267,14 +151,14 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
               return (
                 <div
                   key={idx}
-                  className={`z-0 ${item.layout} transform cursor-pointer rounded-lg border-[2px] transition-all duration-300 hover:z-10 hover:scale-110`}
+                  className={`z-0 ${item.layout} transform cursor-pointer rounded-lg border-[2px] bg-[#9c9c9c] transition-all duration-300 hover:z-10 hover:scale-110`}
                 >
                   {isLazyloading ? (
                     <LazyLoadImage
                       src={imgURLs[idx + 5]}
                       width={"100%"}
                       height={"100%"}
-                      effect="blur" // Optional: Apply a blur effect
+                      effect="blur"
                       onClick={() => handleViewImage(idx + 5)}
                       className="h-full w-full rounded-lg"
                     />
@@ -283,7 +167,7 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
                       src={item.link}
                       width={"100%"}
                       height={"100%"}
-                      effect="blur" // Optional: Apply a blur effect
+                      effect="blur"
                       className="h-full w-full rounded-lg"
                     />
                   )}
@@ -305,112 +189,38 @@ A house? Interior decoration? Or even a piece of furniture you want to create?`,
         )}
       </div>
       {isChatting && (
-        <div className="fixed right-0 top-0 z-30 flex h-full w-full items-center justify-center bg-[#ffffff8f] p-2">
-          <div className="modal-container h-full max-h-[700px] w-full rounded-lg sm:max-w-[900px]">
-            <div className="relative flex h-16 w-full items-center justify-center bg-black px-3">
-              <Avatar src="/img/mark-white.svg" className="h-auto w-10" />
-              <div className="absolute right-0 top-0">
-                <Button variant="text" className="p-2" onClick={closeChatting}>
-                  <Avatar src="img/close.svg" className="h-6 w-6" />
-                </Button>
-              </div>
-            </div>
-            <div className="chat-container flex w-full flex-col justify-between bg-[#fff] opacity-90">
-              <div
-                className="flex h-full w-full flex-col overflow-y-auto p-4"
-                ref={chatWindowRef}
-              >
-                {msglist &&
-                  msglist.map((item, idx) => {
-                    return (
-                      <div
-                        key={idx}
-                        className={`my-2 flex w-full ${
-                          item.role == "user" ? "justify-end" : "justify-start"
-                        }`}
-                      >
-                        <div className="w-fit max-w-[70%] rounded bg-[#d7d7d7] p-2">
-                          {idx == 0 ? (
-                            <TypeWriter
-                              content={item.content}
-                              box_ref={chatWindowRef}
-                              speed={5}
-                            />
-                          ) : (
-                            <div
-                              dangerouslySetInnerHTML={{
-                                __html: item.content.includes("\n")
-                                  ? item.content.replace(/\n/g, "<br />")
-                                  : item.content,
-                              }}
-                              className="text-base"
-                            />
-                          )}
-                        </div>
-                      </div>
-                    );
-                  })}
-                {response != "" && (
-                  <div className="my-2 flex w-full">
-                    <div className="w-fit max-w-[70%] rounded bg-[#d7d7d7] p-2">
-                      <div
-                        dangerouslySetInnerHTML={{
-                          __html: response.includes("\n")
-                            ? response.replace(/\n/g, "<br />")
-                            : response,
-                        }}
-                        className="ml-2 text-base"
-                      />
-                    </div>
-                  </div>
-                )}
-              </div>
-              <div className="relative my-2 flex w-full border-t-[1px] border-black p-4">
-                <div className="relative flex w-full">
-                  <Input
-                    onChange={handlePromptChange}
-                    value={prompt}
-                    onKeyDown={handleKeyDown}
-                    className="w-full rounded-full px-5 text-base"
-                    placeholder="Add your description here"
-                    labelProps={{
-                      className: "before:content-none after:content-none",
-                    }}
-                  ></Input>
-                  <div className="absolute right-0 mx-2 flex h-full items-center">
-                    <Button
-                      onClick={handleSubmitChat}
-                      variant="text"
-                      className="mx-2 h-full w-fit p-0"
-                    >
-                      <Avatar src="img/plus.svg" className="mx-2 h-5 w-5" />
-                    </Button>
-                    <Button
-                      onClick={handleCreateImage}
-                      className="h-[30px] rounded-full bg-black px-[20px] py-[5px] text-white shadow-none hover:shadow-none"
-                    >
-                      Build
-                    </Button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <Chatting onClose={closeChatting} onCreateImages={handleCreateImage} />
       )}
       {isShowReportEmail && (
-        <div className="fixed right-0 top-0 z-30 flex h-full w-full items-center justify-center rounded-md bg-[#ffffff8f] p-2">
-          <div className="modal-container relative h-full max-h-[400px] w-full max-w-[900px] rounded-lg bg-black sm:flex sm:max-h-[600px]">
-            <div className="absolute right-3 top-3 z-40 flex w-full justify-end">
-              <Button variant="text" className="p-0" onClick={closeReportEmail}>
-                <Avatar src="img/close.svg" className="h-auto w-6" />
-              </Button>
-            </div>
+        <div className="fixed right-0 top-0 z-40 flex h-full w-full items-center justify-center rounded-md bg-[#ffffff8f]">
+          <div className="modal-container relative h-full w-full max-w-[900px] bg-black p-8 sm:flex sm:max-h-[600px] sm:p-0">
+            {isMobile && (
+              <div className="mb-2 flex w-full justify-end">
+                <Button
+                  variant="text"
+                  className="p-0"
+                  onClick={closeReportEmail}
+                >
+                  <Avatar src="img/close.svg" className="h-auto w-6" />
+                </Button>
+              </div>
+            )}
             <Avatar
               src="img/img4.jpg"
-              className="h-1/2 w-full rounded-l-lg sm:h-full sm:w-1/2 sm:rounded-r-none"
+              className="h-[300px] w-full rounded-none sm:h-full sm:w-1/2"
             />
-            <div className="flex h-1/2 w-full flex-col items-center justify-center p-4 sm:h-full sm:w-1/2">
+            <div className="relative flex h-1/2 w-full flex-col items-center justify-center p-4 sm:h-full sm:w-1/2">
+              {!isMobile && (
+                <div className="absolute right-3 top-3 mb-2 flex w-full justify-end">
+                  <Button
+                    variant="text"
+                    className="p-0"
+                    onClick={closeReportEmail}
+                  >
+                    <Avatar src="img/close.svg" className="h-auto w-6" />
+                  </Button>
+                </div>
+              )}
               <div className="mx-auto max-w-[340px]">
                 <div className="w-full">
                   <Typography className="text-base font-semibold text-white sm:text-xl md:text-3xl">
