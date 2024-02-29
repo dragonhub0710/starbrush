@@ -11,6 +11,7 @@ export function MyLoader() {
       preserveAspectRatio: "xMidYMid slice",
     },
   };
+
   return (
     <div className="fixed z-50 h-full w-full bg-white">
       <div className="flex h-full items-center justify-center">
