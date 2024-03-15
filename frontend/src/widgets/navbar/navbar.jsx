@@ -19,7 +19,7 @@ export function Navbar(props) {
       <div className="container mx-auto px-8">
         <div className="mb-2">
           <Typography className="text-xl font-bold text-black sm:text-3xl">
-            Tell us about your dream home
+            Create your imagination
           </Typography>
         </div>
         <div className="mt-5">
