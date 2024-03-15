@@ -18,9 +18,7 @@ export function Chatting(props) {
     let msg_list = [];
     msg_list.push({
       role: "assistant",
-      content: `Hey I'm Sam from Starbrush. I'm able to create any inspiration for your dream home or architecture project!
-Let's start by knowing what you'd like to visualise?
-A house? Interior decoration? Or even a piece of furniture you want to create?`,
+      content: `Hey I'm Sam from Starbrush, here to help you bring your ideas to life through AI-generated images. To get started, could you tell me what you're looking to visualize? Whether it's a scene from a book, a concept for a game, or an abstract idea, I'm here to help you bring it to life.`,
     });
     setMsglist(msg_list);
   }, []);
