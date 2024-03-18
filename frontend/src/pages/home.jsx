@@ -24,25 +24,25 @@ export function Home() {
   const layout_style_up = [
     {
       layout: "sm:col-span-2 sm:row-span-5",
-      link: "/img/img1.jpg",
+      link: "/img/img1.png",
     },
-    { layout: "sm:row-span-2", link: "/img/img2.jpg" },
+    { layout: "sm:row-span-2", link: "/img/img2.png" },
     {
       layout: "sm:row-span-3 sm:col-span-1 row-span-2 col-span-2",
-      link: "/img/img3.jpg",
+      link: "/img/img3.png",
     },
-    { layout: "sm:row-span-3", link: "/img/img4.jpg" },
-    { layout: "sm:row-span-2", link: "/img/img5.jpg" },
+    { layout: "sm:row-span-3", link: "/img/img4.png" },
+    { layout: "sm:row-span-2", link: "/img/img5.png" },
   ];
   const layout_style_down = [
-    { layout: "sm:row-span-2", link: "/img/img6.jpg" },
-    { layout: "sm:row-span-3", link: "/img/img7.jpg" },
+    { layout: "sm:row-span-2", link: "/img/img6.png" },
+    { layout: "sm:row-span-3", link: "/img/img7.png" },
     {
       layout: "sm:col-span-2 sm:row-span-5 row-span-2 col-span-2",
-      link: "/img/img8.jpg",
+      link: "/img/img8.png",
     },
-    { layout: "sm:row-span-3", link: "/img/img9.jpg" },
-    { layout: "sm:row-span-2", link: "/img/img10.jpg" },
+    { layout: "sm:row-span-3", link: "/img/img9.png" },
+    { layout: "sm:row-span-2", link: "/img/img10.png" },
   ];
 
   useEffect(() => {
@@ -206,7 +206,7 @@ export function Home() {
               </div>
             )}
             <Avatar
-              src="img/img4.jpg"
+              src="img/img2.png"
               className="h-[300px] w-full rounded-none sm:h-full sm:w-1/2"
             />
             <div className="relative flex h-1/2 w-full flex-col items-center justify-center p-4 sm:h-full sm:w-1/2">
