@@ -1,36 +1,22 @@
 const OpenAI = require("openai");
-const axios = require("axios");
 const Replicate = require("replicate");
-
+const fs = require("fs");
+const { promisify } = require("util");
+const unlinkAsync = promisify(fs.unlink);
+const { readFile } = require("node:fs/promises");
+const path = require("path");
 require("dotenv").config();
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY, // This is the default and can be omitted
+  apiKey: process.env.OPENAI_API_KEY,
 });
 const replicate = new Replicate({
   auth: process.env.REPLICATE_API_TOKEN,
 });
 
-async function generateImage(prompt, base_prompt) {
+async function generateOpenAIImage(prompt, base_prompt) {
   try {
     const image_prompt = base_prompt + `Prompt: ${prompt}`;
-    // return replicate
-    //   .run(
-    //     "playgroundai/playground-v2-1024px-aesthetic:42fe626e41cc811eaf02c94b892774839268ce1994ea778eba97103fe1ef51b8",
-    //     {
-    //       input: {
-    //         width: 1024,
-    //         height: 1024,
-    //         prompt: image_prompt,
-    //         scheduler: "K_EULER_ANCESTRAL",
-    //         guidance_scale: 3,
-    //         apply_watermark: false,
-    //         negative_prompt: "",
-    //         num_inference_steps: 50,
-    //       },
-    //     }
-    //   )
-    //   .then((res) => res[0]);
     return openai.images
       .generate({
         model: "dall-e-3",
@@ -45,16 +31,13 @@ async function generateImage(prompt, base_prompt) {
   }
 }
 
-const imgGenerator = async (req, res) => {
+exports.imgGenerator = async (req, res) => {
   const { list } = req.body;
   try {
-    const res_optimize = await axios.post(process.env.DATABASE_API, {
-      name: process.env.STARBRUSH_CHAT_OPTIMIZE_PROMPT,
-    });
     let msgs = [
       {
         role: "system",
-        content: res_optimize.data.data.prompt,
+        content: process.env.STARBRUSH_CHAT_OPTIMIZE_PROMPT,
       },
     ];
     for (let i = 0; i < list.length; i++) {
@@ -62,29 +45,87 @@ const imgGenerator = async (req, res) => {
     }
     const completion = await openai.chat.completions.create({
       messages: msgs,
-      model: "gpt-3.5-turbo",
+      model: "gpt-4o-mini",
     });
-    const res_image = await axios.post(process.env.DATABASE_API, {
-      name: process.env.STARBRUSH_IMAGE_PROMPT,
-    });
+    const imagePrompts = new Array(5).fill(
+      completion.choices[0].message.content
+    );
+    const imagePromises = imagePrompts.map((prompt) =>
+      generateOpenAIImage(prompt, process.env.STARBRUSH_IMAGE_PROMPT)
+    );
+    const imageUrls = await Promise.all(imagePromises);
 
-    if (res_image.data.data.prompt) {
-      const imagePrompts = new Array(7).fill(
-        completion.choices[0].message.content
-      );
-      const imagePromises = imagePrompts.map((prompt) =>
-        generateImage(prompt, res_image.data.data.prompt)
-      );
-      const imageUrls = await Promise.all(imagePromises);
-
-      res.json(imageUrls);
-    }
+    res.json(imageUrls);
   } catch (err) {
     console.error(err.message);
     res.status(500).json({ message: "Internal server error" });
   }
 };
 
-module.exports = {
-  imgGenerator,
+exports.removeBg = async (req, res) => {
+  try {
+    const file = req.file;
+    const inputPath = path.join(__dirname, "..", "uploads", file.filename);
+    const image = await removeBg(inputPath);
+
+    res.status(200).json({ image: image });
+    await unlinkAsync(`uploads/${file.filename}`);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };
+
+async function removeBg(path) {
+  let image = await readFile(path);
+  let output = await replicate.run(
+    "cjwbw/rembg:fb8af171cfa1616ddcf1242c093f9c46bcada5ad4cf6f2fbe8b81b330ec5c003",
+    {
+      input: { image: image },
+    }
+  );
+  return output;
+}
+
+exports.bgDiffusion = async (req, res) => {
+  try {
+    const file = req.file;
+    const { prompt } = req.body;
+    const inputPath = path.join(__dirname, "..", "uploads", file.filename);
+    const prompts = new Array(3).fill(prompt);
+    const imagePromises = prompts.map((item) =>
+      generateSDImage(inputPath, item)
+    );
+    const imageURLs = await Promise.all(imagePromises);
+
+    res.status(200).json({ images: imageURLs });
+    await unlinkAsync(`uploads/${file.filename}`);
+  } catch (err) {
+    console.error(err.message);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+async function generateSDImage(path, prompt) {
+  let image = await readFile(path);
+  let output = await replicate.run(
+    "wolverinn/realistic-background:ce02013b285241316db1554f28b583ef5aaaf4ac4f118dc08c460e634b2e3e6b",
+    {
+      input: {
+        seed: -1,
+        image: image,
+        steps: 20,
+        prompt: prompt,
+        cfg_scale: 7,
+        max_width: 1024,
+        max_height: 1024,
+        sampler_name: "DPM++ SDE Karras",
+        negative_prompt:
+          "(deformed iris, deformed pupils, semi-realistic, cgi, 3d, render, sketch, cartoon, drawing, anime, mutated hands and fingers:1.4), (deformed, distorted, disfigured:1.3), poorly drawn, bad anatomy, wrong anatomy, extra limb, missing limb, floating limbs, disconnected limbs, mutation, mutated, ugly, disgusting, amputation",
+        denoising_strength: 0.75,
+        only_masked_padding_pixels: 4,
+      },
+    }
+  );
+  return output.image;
+}

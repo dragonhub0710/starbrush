@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { Input, Button, Avatar, Typography } from "@material-tailwind/react";
 import { MyLoader } from "@/widgets/loader/MyLoader";
-import { notification } from "antd";
 import { useNavigate } from "react-router-dom";
 import { getWithExpiry, setWithExpiry } from "@/util/services";
 import { LazyLoadImage } from "react-lazy-load-image-component";
@@ -61,7 +60,9 @@ export function Home() {
   const handleCreateImage = (msg_list) => {
     setLoading(true);
     axios
-      .post(`${process.env.REACT_APP_BASED_URL}/image`, { list: msg_list })
+      .post(`${import.meta.env.VITE_API_BASED_URL}/api/image`, {
+        list: msg_list,
+      })
       .then((res) => {
         if (res.data) {
           let list = [...res.data];
@@ -72,11 +73,9 @@ export function Home() {
           setIsLazyloading(true);
         }
         setLoading(false);
-        notification.success({ message: "Successfully generated AI images." });
       })
       .catch((error) => {
         setLoading(false);
-        notification.error({ message: "Failed to generate AI image." });
         console.log(error);
       });
   };

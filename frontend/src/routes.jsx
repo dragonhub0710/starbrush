@@ -1,15 +1,17 @@
-import { Gallery, Home } from "@/pages";
+import { Diffusion, Gallery, Home } from "@/pages";
 
 export const routes = [
   {
-    name: "Home",
     path: "/",
     element: <Home />,
   },
   {
-    name: "Gallery",
     path: "/view",
     element: <Gallery />,
+  },
+  {
+    path: "/diffusion",
+    element: <Diffusion />,
   },
 ];
 

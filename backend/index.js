@@ -1,5 +1,6 @@
 const express = require("express");
 const cors = require("cors");
+const bodyParser = require("body-parser");
 require("dotenv").config();
 
 const app = express();
@@ -8,6 +9,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 process.setMaxListeners(0);
+
+// Set up bodyParser middleware
+app.use(bodyParser.urlencoded({ limit: "5MB", extended: true }));
+app.use(bodyParser.json({ limit: "5MB" }));
 
 // Define Routes
 app.use("/api/chat", require("./routers/chat.router"));

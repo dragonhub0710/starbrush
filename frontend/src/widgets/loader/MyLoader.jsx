@@ -23,6 +23,4 @@ export function MyLoader() {
   );
 }
 
-MyLoader.displayName = "/src/widgets/loader/MyLoader.jsx";
-
 export default MyLoader;

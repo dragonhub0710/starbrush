@@ -45,27 +45,32 @@ export function Chatting(props) {
     const ctrl = new AbortController();
     async function fetchAnswer() {
       try {
-        await fetchEventSource(`${process.env.REACT_APP_BASED_URL}/chat`, {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            list: list,
-          }),
-          signal: ctrl.signal,
-          onmessage: (event) => {
-            if (JSON.parse(event.data).data === "[DONE]") {
-              setPrompt("");
-              setResponse("");
-              updateMsgList(stream_res);
-              ctrl.abort();
-            } else {
-              stream_res += JSON.parse(event.data).data;
-              setResponse((response) => response + JSON.parse(event.data).data);
-            }
-          },
-        });
+        await fetchEventSource(
+          `${import.meta.env.VITE_API_BASED_URL}/api/chat`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              list: list,
+            }),
+            signal: ctrl.signal,
+            onmessage: (event) => {
+              if (JSON.parse(event.data).data === "[DONE]") {
+                setPrompt("");
+                setResponse("");
+                updateMsgList(stream_res);
+                ctrl.abort();
+              } else {
+                stream_res += JSON.parse(event.data).data;
+                setResponse(
+                  (response) => response + JSON.parse(event.data).data
+                );
+              }
+            },
+          }
+        );
       } catch (err) {
         notification.warning({ message: "Internal Server Error" });
       }

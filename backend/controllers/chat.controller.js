@@ -1,5 +1,4 @@
 const OpenAI = require("openai");
-const axios = require("axios");
 require("dotenv").config();
 
 const openai = new OpenAI({
@@ -21,30 +20,25 @@ exports.generateRes = async (req, res) => {
       };
       res.write(`data: ${JSON.stringify(responseData)}\n\n`);
     };
-    const response = await axios.post(process.env.DATABASE_API, {
-      name: process.env.STARBRUSH_CHAT_PROMPT,
+    let msgs = [
+      {
+        role: "system",
+        content: process.env.STARBRUSH_CHAT_PROMPT,
+      },
+    ];
+    for (let i = 0; i < list.length; i++) {
+      msgs.push({ role: list[i].role, content: list[i].content });
+    }
+    const completion = await openai.chat.completions.create({
+      messages: msgs,
+      model: "gpt-4o-mini",
+      stream: true,
     });
-    if (response.data.data.prompt) {
-      let msgs = [
-        {
-          role: "system",
-          content: response.data.data.prompt,
-        },
-      ];
-      for (let i = 0; i < list.length; i++) {
-        msgs.push({ role: list[i].role, content: list[i].content });
-      }
-      const completion = await openai.chat.completions.create({
-        messages: msgs,
-        model: "gpt-3.5-turbo",
-        stream: true,
-      });
-      for await (const chunk of completion) {
-        if (chunk.choices[0].delta.content == undefined) {
-          sendData("[DONE]");
-        } else {
-          sendData(chunk.choices[0].delta.content);
-        }
+    for await (const chunk of completion) {
+      if (chunk.choices[0].delta.content == undefined) {
+        sendData("[DONE]");
+      } else {
+        sendData(chunk.choices[0].delta.content);
       }
     }
   } catch (err) {
